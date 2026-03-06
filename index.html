@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -360,26 +359,21 @@ const TASKS=[
 // ===== LOAN SCENARIO DATA =====
 // Each scenario: customer dialog hints at the correct answers
 const LOAN_SCENARIOS=[
-  {dialog:'"직장인인데 집 사려고 주택담보대출 받으러 왔어요. 매달 같은 금액으로 갚고 싶습니다."',
-   qs:[{q:"소득 서류를 선택하세요",opts:["근로소득원천징수영수증","사업소득증명원","종합소득세신고서"],c:0},
-       {q:"담보 유형을 확인하세요",opts:["부동산 담보","신용 보증","차량 담보"],c:0},
-       {q:"상환 방식을 선택하세요",opts:["원리금균등상환","만기일시상환","자유상환"],c:0}]},
-  {dialog:'"자영업자인데 가게 운영자금 좀 빌리려고요. 장사가 잘 되면 한번에 갚을게요."',
-   qs:[{q:"소득 서류를 선택하세요",opts:["근로소득원천징수영수증","사업소득증명원","재직증명서"],c:1},
-       {q:"담보 유형을 확인하세요",opts:["부동산 담보","신용 보증","차량 담보"],c:1},
-       {q:"상환 방식을 선택하세요",opts:["원리금균등상환","만기일시상환","자유상환"],c:1}]},
-  {dialog:'"회사원이에요. 차를 사고 싶은데 자동차 할부 대출 되나요? 매달 조금씩 나눠 갚을게요."',
-   qs:[{q:"소득 서류를 선택하세요",opts:["사업소득증명원","근로소득원천징수영수증","종합소득세신고서"],c:1},
-       {q:"담보 유형을 확인하세요",opts:["부동산 담보","신용 보증","차량 담보"],c:2},
-       {q:"상환 방식을 선택하세요",opts:["만기일시상환","자유상환","원리금균등상환"],c:2}]},
-  {dialog:'"프리랜서인데 전세자금 대출 받으러 왔어요. 계약 끝나면 한꺼번에 갚겠습니다."',
-   qs:[{q:"소득 서류를 선택하세요",opts:["재직증명서","근로소득원천징수영수증","종합소득세신고서"],c:2},
-       {q:"담보 유형을 확인하세요",opts:["차량 담보","부동산 담보","신용 보증"],c:1},
-       {q:"상환 방식을 선택하세요",opts:["원리금균등상환","만기일시상환","자유상환"],c:1}]},
-  {dialog:'"공무원입니다. 담보 없이 신용대출 가능한가요? 매월 일정 금액씩 납부하고 싶어요."',
-   qs:[{q:"소득 서류를 선택하세요",opts:["사업소득증명원","종합소득세신고서","재직증명서"],c:2},
-       {q:"담보 유형을 확인하세요",opts:["부동산 담보","신용 보증","차량 담보"],c:1},
-       {q:"상환 방식을 선택하세요",opts:["만기일시상환","원리금균등상환","자유상환"],c:1}]},
+  {dialog:'"<b style=color:#FFD700>직장인</b>인데 <b style=color:#90CAF9>집</b> 사려고 대출 받으러 왔어요."',
+   qs:[{q:"소득 서류를 선택하세요",opts:["근로소득원천징수영수증","사업소득증명원"],c:0},
+       {q:"대출 상품을 선택하세요",opts:["주택담보대출","자동차할부대출"],c:0}]},
+  {dialog:'"<b style=color:#FFD700>자영업자</b>인데 가게 <b style=color:#90CAF9>운영자금</b> 좀 빌리려고요."',
+   qs:[{q:"소득 서류를 선택하세요",opts:["근로소득원천징수영수증","사업소득증명원"],c:1},
+       {q:"대출 상품을 선택하세요",opts:["사업자운영자금대출","주택담보대출"],c:0}]},
+  {dialog:'"<b style=color:#FFD700>회사원</b>이에요. <b style=color:#90CAF9>차</b>를 사고 싶은데 대출 되나요?"',
+   qs:[{q:"소득 서류를 선택하세요",opts:["사업소득증명원","근로소득원천징수영수증"],c:1},
+       {q:"대출 상품을 선택하세요",opts:["자동차할부대출","전세자금대출"],c:0}]},
+  {dialog:'"<b style=color:#FFD700>프리랜서</b>인데 <b style=color:#90CAF9>전세자금</b> 대출 받으러 왔어요."',
+   qs:[{q:"소득 서류를 선택하세요",opts:["재직증명서","종합소득세신고서"],c:1},
+       {q:"대출 상품을 선택하세요",opts:["사업자운영자금대출","전세자금대출"],c:1}]},
+  {dialog:'"<b style=color:#FFD700>공무원</b>입니다. <b style=color:#90CAF9>신용대출</b> 가능한가요?"',
+   qs:[{q:"소득 서류를 선택하세요",opts:["사업소득증명원","재직증명서"],c:1},
+       {q:"대출 상품을 선택하세요",opts:["신용대출","주택담보대출"],c:0}]},
 ];
 // ===== HANDLE RESPONSE DATA =====
 const HANDLE_RS=[
@@ -625,17 +619,17 @@ function startLoanGame(){
   const qs=scenario.qs;
   let step=0;
   function render(){
-    miniBar.style.display='block';miniFill.style.width=((step/3)*100)+'%';miniFill.style.background='linear-gradient(90deg,#CE93D8,#BA68C8)';
-    miniText.textContent=`서류 검토: ${step}/3`;
-    dialog.innerHTML='<div style="font-size:10px;color:#B0A0D0;margin-bottom:4px;">고객 대사:</div>'+scenario.dialog+'<div style="margin-top:6px;font-size:12px;color:#FFD700;">'+qs[step].q+'</div>';
+    miniBar.style.display='block';miniFill.style.width=((step/2)*100)+'%';miniFill.style.background='linear-gradient(90deg,#CE93D8,#BA68C8)';
+    miniText.textContent=`서류 검토: ${step}/2`;
+    dialog.innerHTML='<div style="font-size:10px;color:#B0A0D0;margin-bottom:2px;">고객 말을 잘 읽어보세요:</div><div style="font-size:13px;line-height:1.6;margin:4px 0;">'+scenario.dialog+'</div><div style="margin-top:6px;font-size:13px;color:#FFD700;font-weight:bold;">Q. '+qs[step].q+'</div>';
     buttons.innerHTML='';
     const q=qs[step];
     q.opts.forEach((opt,i)=>{
       const b=document.createElement('button');b.className='task-btn loan';
-      b.style.cssText='min-width:100%;font-size:11px;padding:7px 8px;';
+      b.style.cssText='min-width:100%;font-size:13px;padding:10px 8px;';
       b.textContent=opt;b.onclick=()=>{
-        if(i===q.c){step++;floatText('정확!','#7BD47B',240,300);if(step>=3)completeTask();else render();}
-        else{floatText('서류 오류! -2초','#EF5350',200,300);STATE.timeLeft-=2;}
+        if(i===q.c){step++;floatText('정확!','#7BD47B',240,300);if(step>=2)completeTask();else render();}
+        else{floatText('다시 골라보세요!','#EF5350',200,300);STATE.timeLeft-=1;}
       };buttons.appendChild(b);
     });
   }
@@ -699,18 +693,18 @@ function startLunchBreak(){
   const dpad=document.getElementById('lunch-dpad');
   overlay.style.display='block';dpad.style.display='grid';
   const ctx=canvas.getContext('2d');const W=480,H=650;canvas.width=W;canvas.height=H;
-  const player={x:50,y:H/2,speed:4.5};
+  const player={x:50,y:H/2,speed:5.5};
   const mgr={x:W/2,y:H/2-40,speed:0.7,dx:0.7,dy:0.35};
   const store={x:W-65,y:H/2-25,w:50,h:55};
   let lunchTime=15,done=false;
   // Obstacles
   const obstacles=[
-    {x:140,y:H*.33,w:35,h:35,type:'trash'},
-    {x:220,y:H*.55,w:50,h:20,type:'bench'},
-    {x:310,y:H*.38,w:30,h:30,type:'sign'},
-    {x:180,y:H*.62,w:35,h:35,type:'trash'},
-    {x:350,y:H*.58,w:50,h:20,type:'bench'},
-    {x:270,y:H*.42,w:25,h:40,type:'pole'},
+    {x:145,y:H*.33,w:28,h:28,type:'trash'},
+    {x:225,y:H*.55,w:40,h:16,type:'bench'},
+    {x:315,y:H*.38,w:24,h:24,type:'sign'},
+    {x:185,y:H*.64,w:28,h:28,type:'trash'},
+    {x:355,y:H*.58,w:40,h:16,type:'bench'},
+    {x:275,y:H*.42,w:20,h:32,type:'pole'},
   ];
   // Manager speech bubbles
   const MGR_LINES=["일 안하나?","자네 지금 뭐하는건가?","어딜 가는거야!","점심은 무슨 점심!","다시 돌아가!","빨리 복귀해!!","자네 각오해!","누가 나가래?!","오늘 야근이다!"];
@@ -768,10 +762,11 @@ function startLunchBreak(){
     let nx=player.x,ny=player.y;
     if(moveDir.up)ny-=player.speed;if(moveDir.down)ny+=player.speed;
     if(moveDir.left)nx-=player.speed;if(moveDir.right)nx+=player.speed;
-    nx=Math.max(10,Math.min(W-40,nx));ny=Math.max(80,Math.min(H-180,ny));
-    if(!collidesObs(nx,ny,20,30))player.x=nx;
-    else if(!collidesObs(nx,player.y,20,30))player.x=nx;
-    else if(!collidesObs(player.x,ny,20,30))player.y=ny;
+    nx=Math.max(5,Math.min(W-30,nx));ny=Math.max(60,Math.min(H-140,ny));
+    // Try full diagonal, then each axis separately for smooth wall sliding
+    if(!collidesObs(nx,ny,14,20)){player.x=nx;player.y=ny;}
+    else if(!collidesObs(nx,player.y,14,20))player.x=nx;
+    else if(!collidesObs(player.x,ny,14,20))player.y=ny;
     // Manager AI: patrol + slight chase
     let mx=mgr.x+mgr.dx*mgr.speed,my=mgr.y+mgr.dy*mgr.speed;
     if(mx<120||mx>W-130)mgr.dx*=-1;
@@ -784,7 +779,7 @@ function startLunchBreak(){
     mgrBubbleTime--;
     if(mgrBubbleTime<=0){mgrBubble=MGR_LINES[Math.floor(Math.random()*MGR_LINES.length)];mgrBubbleTime=90+Math.floor(Math.random()*60);}
     // Collision with manager
-    if(Math.abs(player.x-mgr.x)<28&&Math.abs(player.y-mgr.y)<32){done=true;endL(false);return;}
+    if(Math.abs(player.x-mgr.x)<22&&Math.abs(player.y-mgr.y)<25){done=true;endL(false);return;}
     // Store reached
     if(player.x+25>store.x&&player.y>store.y-10&&player.y<store.y+store.h+10){done=true;endL(true);return;}
     // ===== DRAW =====
