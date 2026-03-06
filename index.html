@@ -117,8 +117,11 @@
   #lunch-overlay canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
   #lunch-text{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-size:14px;color:#fff;text-shadow:1px 1px 2px #000;z-index:2;white-space:nowrap;}
   #lunch-dpad{position:absolute;bottom:20px;left:20px;z-index:3;display:grid;grid-template-columns:48px 48px 48px;grid-template-rows:48px 48px 48px;gap:2px;-webkit-user-select:none;user-select:none;}
-  .dpad-btn{width:48px;height:48px;background:rgba(255,255,255,0.35);border:2px solid rgba(255,255,255,0.5);border-radius:10px;font-size:18px;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-user-select:none;user-select:none;}
+  .dpad-btn{width:48px;height:48px;background:rgba(255,255,255,0.35);border:2px solid rgba(255,255,255,0.5);border-radius:10px;font-size:18px;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-user-select:none;user-select:none;touch-action:none;}
   .dpad-btn:active{background:rgba(255,255,255,0.7);}
+  #lunch-joystick{position:absolute;bottom:30px;left:30px;z-index:3;width:120px;height:120px;-webkit-user-select:none;user-select:none;touch-action:none;display:none;}
+  .joystick-base{width:120px;height:120px;background:rgba(255,255,255,0.2);border:3px solid rgba(255,255,255,0.4);border-radius:50%;position:relative;}
+  .joystick-knob{width:44px;height:44px;background:rgba(255,255,255,0.6);border:2px solid rgba(255,255,255,0.8);border-radius:50%;position:absolute;top:38px;left:38px;transition:none;}
   .dpad-spacer{width:48px;height:48px;}
 </style>
 </head>
@@ -209,6 +212,11 @@
           <div class="dpad-spacer"></div>
           <div class="dpad-btn" data-dir="down">&#9660;</div>
           <div class="dpad-spacer"></div>
+        </div>
+        <div id="lunch-joystick">
+          <div class="joystick-base">
+            <div class="joystick-knob" id="joystick-knob"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -359,19 +367,24 @@ const TASKS=[
 // ===== LOAN SCENARIO DATA =====
 // Each scenario: customer dialog hints at the correct answers
 const LOAN_SCENARIOS=[
-  {dialog:'"<b style=color:#FFD700>직장인</b>인데 <b style=color:#90CAF9>집</b> 사려고 대출 받으러 왔어요."',
+  {tags:['직장인','회사 근무 중','아파트 구매 희망'],
+   dialog:'"<b style=color:#FFD700>직장인</b>인데 <b style=color:#90CAF9>집</b> 사려고 대출 받으러 왔어요."',
    qs:[{q:"소득 서류를 선택하세요",opts:["근로소득원천징수영수증","사업소득증명원"],c:0},
        {q:"대출 상품을 선택하세요",opts:["주택담보대출","자동차할부대출"],c:0}]},
-  {dialog:'"<b style=color:#FFD700>자영업자</b>인데 가게 <b style=color:#90CAF9>운영자금</b> 좀 빌리려고요."',
+  {tags:['자영업자','치킨집 사장님','사업자등록증 보유'],
+   dialog:'"<b style=color:#FFD700>자영업자</b>인데 가게 <b style=color:#90CAF9>운영자금</b> 좀 빌리려고요."',
    qs:[{q:"소득 서류를 선택하세요",opts:["근로소득원천징수영수증","사업소득증명원"],c:1},
        {q:"대출 상품을 선택하세요",opts:["사업자운영자금대출","주택담보대출"],c:0}]},
-  {dialog:'"<b style=color:#FFD700>회사원</b>이에요. <b style=color:#90CAF9>차</b>를 사고 싶은데 대출 되나요?"',
+  {tags:['회사원','월급 수령 중','차량 구매 희망'],
+   dialog:'"<b style=color:#FFD700>회사원</b>이에요. <b style=color:#90CAF9>차</b>를 사고 싶은데 대출 되나요?"',
    qs:[{q:"소득 서류를 선택하세요",opts:["사업소득증명원","근로소득원천징수영수증"],c:1},
        {q:"대출 상품을 선택하세요",opts:["자동차할부대출","전세자금대출"],c:0}]},
-  {dialog:'"<b style=color:#FFD700>프리랜서</b>인데 <b style=color:#90CAF9>전세자금</b> 대출 받으러 왔어요."',
+  {tags:['프리랜서','직장 없음','전세집 이사 예정'],
+   dialog:'"<b style=color:#FFD700>프리랜서</b>인데 <b style=color:#90CAF9>전세자금</b> 대출 받으러 왔어요."',
    qs:[{q:"소득 서류를 선택하세요",opts:["재직증명서","종합소득세신고서"],c:1},
        {q:"대출 상품을 선택하세요",opts:["사업자운영자금대출","전세자금대출"],c:1}]},
-  {dialog:'"<b style=color:#FFD700>공무원</b>입니다. <b style=color:#90CAF9>신용대출</b> 가능한가요?"',
+  {tags:['공무원','국가기관 재직 중','담보 없음'],
+   dialog:'"<b style=color:#FFD700>공무원</b>입니다. <b style=color:#90CAF9>신용대출</b> 가능한가요?"',
    qs:[{q:"소득 서류를 선택하세요",opts:["사업소득증명원","재직증명서"],c:1},
        {q:"대출 상품을 선택하세요",opts:["신용대출","주택담보대출"],c:0}]},
 ];
@@ -572,7 +585,9 @@ function startWithdrawGame(){
     dialog.innerHTML=`현금 계수기로 <span style="color:#FFD700">${target}만원</span>을 세세요! (오차 ${tolerance}만원 허용)`;
     miniBar.style.display='block';
     miniFill.style.width=Math.min(100,(current/target)*100)+'%';
-    miniFill.style.background=Math.abs(current-target)<=tolerance?'linear-gradient(90deg,#7BD47B,#4CAF50)':'linear-gradient(90deg,#FFB74D,#FFA726)';
+    if(current>target+tolerance)miniFill.style.background='linear-gradient(90deg,#EF5350,#E53935)';
+    else if(Math.abs(current-target)<=tolerance)miniFill.style.background='linear-gradient(90deg,#7BD47B,#4CAF50)';
+    else miniFill.style.background='linear-gradient(90deg,#FFB74D,#FFA726)';
     miniText.textContent=`${current}만원 / ${target}만원`;
     buttons.innerHTML='';
     const disp=document.createElement('div');disp.style.cssText='text-align:center;font-size:28px;color:#FFD700;margin:4px 0;font-weight:bold;letter-spacing:2px;height:36px;';
@@ -602,9 +617,11 @@ function startWithdrawGame(){
       if(!counting)return;
       current++;
       miniFill.style.width=Math.min(100,(current/target)*100)+'%';
-      miniFill.style.background=Math.abs(current-target)<=3?'linear-gradient(90deg,#7BD47B,#4CAF50)':'linear-gradient(90deg,#FFB74D,#FFA726)';
+      if(current>target+tolerance)miniFill.style.background='linear-gradient(90deg,#EF5350,#E53935)';
+      else if(Math.abs(current-target)<=tolerance)miniFill.style.background='linear-gradient(90deg,#7BD47B,#4CAF50)';
+      else miniFill.style.background='linear-gradient(90deg,#FFB74D,#FFA726)';
       miniText.textContent=`${current}만원 / ${target}만원`;
-      const disp=buttons.querySelector('div');if(disp){disp.textContent=current+'만원';if(current>target)disp.style.color='#EF5350';}
+      const disp=buttons.querySelector('div');if(disp){disp.textContent=current+'만원';if(current>target+tolerance)disp.style.color='#EF5350';else if(Math.abs(current-target)<=tolerance)disp.style.color='#7BD47B';}
       if(current>target+tolerance+15){counting=false;clearInterval(ivC);tries++;floatText('너무 많이 셌어요!','#EF5350',180,300);STATE.timeLeft-=1.5;render();}
     },Math.max(60,140-speed*30));
   }
@@ -621,7 +638,8 @@ function startLoanGame(){
   function render(){
     miniBar.style.display='block';miniFill.style.width=((step/2)*100)+'%';miniFill.style.background='linear-gradient(90deg,#CE93D8,#BA68C8)';
     miniText.textContent=`서류 검토: ${step}/2`;
-    dialog.innerHTML='<div style="font-size:10px;color:#B0A0D0;margin-bottom:2px;">고객 말을 잘 읽어보세요:</div><div style="font-size:13px;line-height:1.6;margin:4px 0;">'+scenario.dialog+'</div><div style="margin-top:6px;font-size:13px;color:#FFD700;font-weight:bold;">Q. '+qs[step].q+'</div>';
+    const tagsHtml=scenario.tags.map(t=>'<span style="display:inline-block;background:#3A2860;color:#E0D0FF;border:1px solid #6A5ACD;border-radius:4px;padding:1px 6px;margin:1px 2px;font-size:10px;">'+t+'</span>').join('');
+    dialog.innerHTML='<div style="margin-bottom:3px;">'+tagsHtml+'</div><div style="font-size:13px;line-height:1.6;margin:4px 0;">'+scenario.dialog+'</div><div style="margin-top:6px;font-size:13px;color:#FFD700;font-weight:bold;">Q. '+qs[step].q+'</div>';
     buttons.innerHTML='';
     const q=qs[step];
     q.opts.forEach((opt,i)=>{
@@ -691,25 +709,29 @@ function startLunchBreak(){
   const canvas=document.getElementById('lunch-canvas');
   const textEl=document.getElementById('lunch-text');
   const dpad=document.getElementById('lunch-dpad');
-  overlay.style.display='block';dpad.style.display='grid';
+  const joystick=document.getElementById('lunch-joystick');
+  const knob=document.getElementById('joystick-knob');
+  overlay.style.display='block';
+  // Show joystick on touch devices, dpad on desktop
+  const isTouch='ontouchstart' in window;
+  if(isTouch){joystick.style.display='block';dpad.style.display='none';}
+  else{dpad.style.display='grid';joystick.style.display='none';}
   const ctx=canvas.getContext('2d');const W=480,H=650;canvas.width=W;canvas.height=H;
-  const player={x:50,y:H/2,speed:5.5};
-  const mgr={x:W/2,y:H/2-40,speed:0.7,dx:0.7,dy:0.35};
+  const player={x:50,y:H/2,vx:0,vy:0,speed:6,accel:0.8,friction:0.82};
+  const mgr={x:W/2+30,y:H*.35,speed:0.5,dx:0.5,dy:0.3};
   const store={x:W-65,y:H/2-25,w:50,h:55};
-  let lunchTime=15,done=false;
-  // Obstacles
+  let lunchTime=20,done=false;
+  // Fewer, smaller obstacles - only on upper/lower paths
   const obstacles=[
-    {x:145,y:H*.33,w:28,h:28,type:'trash'},
-    {x:225,y:H*.55,w:40,h:16,type:'bench'},
-    {x:315,y:H*.38,w:24,h:24,type:'sign'},
-    {x:185,y:H*.64,w:28,h:28,type:'trash'},
-    {x:355,y:H*.58,w:40,h:16,type:'bench'},
-    {x:275,y:H*.42,w:20,h:32,type:'pole'},
+    {x:200,y:H*.32,w:30,h:14,type:'bench'},
+    {x:330,y:H*.60,w:30,h:14,type:'bench'},
+    {x:270,y:H*.42,w:20,h:20,type:'trash'},
   ];
-  // Manager speech bubbles
   const MGR_LINES=["일 안하나?","자네 지금 뭐하는건가?","어딜 가는거야!","점심은 무슨 점심!","다시 돌아가!","빨리 복귀해!!","자네 각오해!","누가 나가래?!","오늘 야근이다!"];
   let mgrBubble='',mgrBubbleTime=0;
-  const moveDir={up:false,down:false,left:false,right:false};
+  // Analog input: -1 to 1
+  let inputX=0,inputY=0;
+  const keys={up:false,down:false,left:false,right:false};
   // Player sprite
   const plC=document.createElement('canvas');plC.width=60;plC.height=80;
   drawChibiTeller(plC.getContext('2d'),STATE.character,3,0);
@@ -722,29 +744,67 @@ function startLunchBreak(){
   fillR(mc,4,7,6,4,ms,'#2A2A40');fillP(mc,6,7,ms,'#B0B0B8');fillP(mc,7,7,ms,'#B0B0B8');fillP(mc,6,8,ms,'#C04040');
   fillR(mc,3,8,1,2,ms,'#2A2A40');fillR(mc,10,8,1,2,ms,'#2A2A40');
   fillR(mc,4,11,6,2,ms,'#3A3A50');fillP(mc,4,13,ms,'#1A1A28');fillP(mc,5,13,ms,'#1A1A28');fillP(mc,8,13,ms,'#1A1A28');fillP(mc,9,13,ms,'#1A1A28');
-  // Keyboard
-  function kd(e){if(e.key==='ArrowUp'||e.key==='w')moveDir.up=true;if(e.key==='ArrowDown'||e.key==='s')moveDir.down=true;if(e.key==='ArrowLeft'||e.key==='a')moveDir.left=true;if(e.key==='ArrowRight'||e.key==='d')moveDir.right=true;}
-  function ku(e){if(e.key==='ArrowUp'||e.key==='w')moveDir.up=false;if(e.key==='ArrowDown'||e.key==='s')moveDir.down=false;if(e.key==='ArrowLeft'||e.key==='a')moveDir.left=false;if(e.key==='ArrowRight'||e.key==='d')moveDir.right=false;}
+  // Keyboard controls
+  function kd(e){
+    if(e.key==='ArrowUp'||e.key==='w')keys.up=true;
+    if(e.key==='ArrowDown'||e.key==='s')keys.down=true;
+    if(e.key==='ArrowLeft'||e.key==='a')keys.left=true;
+    if(e.key==='ArrowRight'||e.key==='d')keys.right=true;
+    e.preventDefault();
+  }
+  function ku(e){
+    if(e.key==='ArrowUp'||e.key==='w')keys.up=false;
+    if(e.key==='ArrowDown'||e.key==='s')keys.down=false;
+    if(e.key==='ArrowLeft'||e.key==='a')keys.left=false;
+    if(e.key==='ArrowRight'||e.key==='d')keys.right=false;
+  }
   document.addEventListener('keydown',kd);document.addEventListener('keyup',ku);
-  // D-pad buttons
-  const btns=dpad.querySelectorAll('.dpad-btn');
-  btns.forEach(b=>{
+  // D-pad buttons (desktop fallback)
+  const dpadBtns=dpad.querySelectorAll('.dpad-btn');
+  dpadBtns.forEach(b=>{
     const d=b.dataset.dir;
-    const on=e=>{e.preventDefault();moveDir[d]=true;};
-    const off=()=>{moveDir[d]=false;};
+    const on=e=>{e.preventDefault();keys[d]=true;};
+    const off=()=>{keys[d]=false;};
     b.addEventListener('mousedown',on);b.addEventListener('mouseup',off);b.addEventListener('mouseleave',off);
     b.addEventListener('touchstart',on,{passive:false});b.addEventListener('touchend',off);b.addEventListener('touchcancel',off);
   });
-  // Timer
+  // Joystick touch controls
+  let joyActive=false;
+  const joyBase=joystick.querySelector('.joystick-base');
+  function handleJoy(e){
+    e.preventDefault();
+    const rect=joyBase.getBoundingClientRect();
+    const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+    const touch=e.touches?e.touches[0]:e;
+    let dx=touch.clientX-cx,dy=touch.clientY-cy;
+    const maxR=rect.width/2-10;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist>maxR){dx=dx/dist*maxR;dy=dy/dist*maxR;}
+    knob.style.left=(38+dx)+'px';knob.style.top=(38+dy)+'px';
+    inputX=dx/maxR;inputY=dy/maxR;
+    // Dead zone
+    if(Math.abs(inputX)<0.15)inputX=0;
+    if(Math.abs(inputY)<0.15)inputY=0;
+  }
+  function endJoy(){joyActive=false;inputX=0;inputY=0;knob.style.left='38px';knob.style.top='38px';}
+  joyBase.addEventListener('touchstart',e=>{e.preventDefault();joyActive=true;handleJoy(e);},{passive:false});
+  joyBase.addEventListener('touchmove',e=>{if(joyActive)handleJoy(e);},{passive:false});
+  joyBase.addEventListener('touchend',endJoy);joyBase.addEventListener('touchcancel',endJoy);
+  // Also support canvas touch (tap to move toward point)
+  let canvasTouch=null;
+  canvas.addEventListener('touchstart',e=>{e.preventDefault();canvasTouch=e.touches[0];},{passive:false});
+  canvas.addEventListener('touchmove',e=>{e.preventDefault();canvasTouch=e.touches[0];},{passive:false});
+  canvas.addEventListener('touchend',e=>{canvasTouch=null;},{passive:false});
+  canvas.addEventListener('touchcancel',e=>{canvasTouch=null;},{passive:false});
+  // Timer - 20 seconds
   const ti=setInterval(()=>{lunchTime--;if(lunchTime<=0&&!done){done=true;endL(false);}},1000);
   function endL(success){
     done=true;clearInterval(ti);
     document.removeEventListener('keydown',kd);document.removeEventListener('keyup',ku);
-    textEl.textContent=success?'편의점 도시락 획득! +80G':'지점장한테 걸렸다... 컵라면이라도... +20G';
+    textEl.textContent=success?'편의점 도시락 획득! +80G':'시간 초과... 컵라면이라도... +20G';
     const bonus=success?80:20;STATE.gold+=bonus;STATE.dailyGold+=bonus;updateHUD();
     setTimeout(()=>{
-      overlay.style.display='none';dpad.style.display='none';
-      // Clone dpad to remove listeners
+      overlay.style.display='none';dpad.style.display='none';joystick.style.display='none';
       const oldDpad=document.getElementById('lunch-dpad');
       const newDpad=oldDpad.cloneNode(true);oldDpad.parentNode.replaceChild(newDpad,oldDpad);
       newDpad.style.display='none';
@@ -758,30 +818,55 @@ function startLunchBreak(){
   }
   function loop(){
     if(done)return;
-    // Player movement with obstacle collision
-    let nx=player.x,ny=player.y;
-    if(moveDir.up)ny-=player.speed;if(moveDir.down)ny+=player.speed;
-    if(moveDir.left)nx-=player.speed;if(moveDir.right)nx+=player.speed;
-    nx=Math.max(5,Math.min(W-30,nx));ny=Math.max(60,Math.min(H-140,ny));
-    // Try full diagonal, then each axis separately for smooth wall sliding
-    if(!collidesObs(nx,ny,14,20)){player.x=nx;player.y=ny;}
-    else if(!collidesObs(nx,player.y,14,20))player.x=nx;
-    else if(!collidesObs(player.x,ny,14,20))player.y=ny;
-    // Manager AI: patrol + slight chase
+    // Compute input from keyboard or joystick or canvas tap
+    let ix=inputX,iy=inputY;
+    if(keys.left)ix=-1;if(keys.right)ix=1;
+    if(keys.up)iy=-1;if(keys.down)iy=1;
+    // Canvas touch: move toward touch point
+    if(canvasTouch&&!joyActive){
+      const rect=canvas.getBoundingClientRect();
+      const tx=(canvasTouch.clientX-rect.left)*(W/rect.width);
+      const ty=(canvasTouch.clientY-rect.top)*(H/rect.height);
+      const ddx=tx-player.x,ddy=ty-player.y;
+      const dd=Math.sqrt(ddx*ddx+ddy*ddy);
+      if(dd>10){ix=ddx/dd;iy=ddy/dd;}
+    }
+    // Normalize diagonal
+    const mag=Math.sqrt(ix*ix+iy*iy);
+    if(mag>1){ix/=mag;iy/=mag;}
+    // Apply acceleration-based movement
+    player.vx+=ix*player.accel;player.vy+=iy*player.accel;
+    player.vx*=player.friction;player.vy*=player.friction;
+    // Clamp speed
+    const spd=Math.sqrt(player.vx*player.vx+player.vy*player.vy);
+    if(spd>player.speed){player.vx=player.vx/spd*player.speed;player.vy=player.vy/spd*player.speed;}
+    let nx=player.x+player.vx,ny=player.y+player.vy;
+    nx=Math.max(5,Math.min(W-30,nx));ny=Math.max(50,Math.min(H-120,ny));
+    if(!collidesObs(nx,ny,12,16)){player.x=nx;player.y=ny;}
+    else if(!collidesObs(nx,player.y,12,16)){player.x=nx;player.vy*=-0.3;}
+    else if(!collidesObs(player.x,ny,12,16)){player.y=ny;player.vx*=-0.3;}
+    else{player.vx*=-0.3;player.vy*=-0.3;}
+    // Manager AI: slow patrol, very weak chase
     let mx=mgr.x+mgr.dx*mgr.speed,my=mgr.y+mgr.dy*mgr.speed;
-    if(mx<120||mx>W-130)mgr.dx*=-1;
-    if(my<100||my>H-200)mgr.dy*=-1;
+    if(mx<130||mx>W-140)mgr.dx*=-1;
+    if(my<110||my>H-200)mgr.dy*=-1;
     if(!collidesObs(mx,my,20,30)){mgr.x=mx;mgr.y=my;}else{mgr.dx*=-1;mgr.dy*=-1;}
-    if(Math.random()<0.03)mgr.dy=(Math.random()*2-1)*0.5;
+    if(Math.random()<0.02)mgr.dy=(Math.random()*2-1)*0.4;
     const dist=Math.sqrt((player.x-mgr.x)**2+(player.y-mgr.y)**2);
-    if(dist<120){mgr.x+=(player.x-mgr.x)*0.003;mgr.y+=(player.y-mgr.y)*0.003;}
+    if(dist<80){mgr.x+=(player.x-mgr.x)*0.001;mgr.y+=(player.y-mgr.y)*0.001;}
     // Manager speech bubble
     mgrBubbleTime--;
     if(mgrBubbleTime<=0){mgrBubble=MGR_LINES[Math.floor(Math.random()*MGR_LINES.length)];mgrBubbleTime=90+Math.floor(Math.random()*60);}
-    // Collision with manager
-    if(Math.abs(player.x-mgr.x)<22&&Math.abs(player.y-mgr.y)<25){done=true;endL(false);return;}
+    // Collision with manager - very forgiving
+    if(Math.abs(player.x-mgr.x)<18&&Math.abs(player.y-mgr.y)<20){
+      // Push player away instead of instant game over
+      player.vx+=(player.x-mgr.x)*0.3;player.vy+=(player.y-mgr.y)*0.3;
+      lunchTime=Math.max(0,lunchTime-3);
+      floatText('-3초! 잡힐뻔!','#EF5350',player.x+200,player.y+200);
+      mgr.dx*=-1;mgr.dy*=-1;
+    }
     // Store reached
-    if(player.x+25>store.x&&player.y>store.y-10&&player.y<store.y+store.h+10){done=true;endL(true);return;}
+    if(player.x+25>store.x&&player.y>store.y-15&&player.y<store.y+store.h+15){done=true;endL(true);return;}
     // ===== DRAW =====
     ctx.clearRect(0,0,W,H);
     ctx.fillStyle='#A8D8A8';ctx.fillRect(0,0,W,H);
@@ -791,18 +876,20 @@ function startLunchBreak(){
     // Bank
     ctx.fillStyle='#FFE8D0';ctx.fillRect(10,H*.35,55,H*.3);ctx.fillStyle='#FF9A9A';ctx.fillRect(10,H*.35,55,12);
     ctx.fillStyle='#8B4513';ctx.font='7px Galmuri11,monospace';ctx.textAlign='center';ctx.fillText('눙헙은행',37,H*.35+25);ctx.textAlign='left';
-    // Store
+    // Store (bigger target, with glow)
+    ctx.fillStyle='rgba(135,206,235,0.3)';ctx.fillRect(store.x-5,store.y-5,store.w+10,store.h+10);
     ctx.fillStyle='#87CEEB';ctx.fillRect(store.x,store.y,store.w,store.h);
     ctx.fillStyle='#4A90D0';ctx.fillRect(store.x,store.y,store.w,10);
-    ctx.fillStyle='#FFF';ctx.font='8px Galmuri11,monospace';ctx.textAlign='center';ctx.fillText('편의점',store.x+store.w/2,store.y+30);ctx.textAlign='left';
+    ctx.fillStyle='#FFF';ctx.font='8px Galmuri11,monospace';ctx.textAlign='center';ctx.fillText('편의점',store.x+store.w/2,store.y+30);
+    // Arrow pointing to store
+    ctx.fillStyle='#FFD700';ctx.font='bold 14px Galmuri11,monospace';ctx.fillText('>>>',store.x-30,store.y+store.h/2+4);
+    ctx.textAlign='left';
     // Trees
     ctx.fillStyle='#5A8A5A';[160,260,360].forEach(tx=>{ctx.beginPath();ctx.arc(tx,H*.22,12,0,Math.PI*2);ctx.fill();ctx.fillStyle='#8B5E30';ctx.fillRect(tx-2,H*.22+8,4,12);ctx.fillStyle='#5A8A5A';});
     // Obstacles
     obstacles.forEach(o=>{
       if(o.type==='trash'){ctx.fillStyle='#708090';ctx.fillRect(o.x,o.y,o.w,o.h);ctx.fillStyle='#556070';ctx.fillRect(o.x+3,o.y-5,o.w-6,6);ctx.fillStyle='#888';ctx.fillRect(o.x+o.w/2-2,o.y-8,4,4);}
       else if(o.type==='bench'){ctx.fillStyle='#8B6B4A';ctx.fillRect(o.x,o.y,o.w,o.h);ctx.fillStyle='#A08060';ctx.fillRect(o.x+2,o.y+2,o.w-4,6);ctx.fillStyle='#6A4A30';ctx.fillRect(o.x+4,o.y+o.h,4,8);ctx.fillRect(o.x+o.w-8,o.y+o.h,4,8);}
-      else if(o.type==='sign'){ctx.fillStyle='#C0C0C0';ctx.fillRect(o.x+o.w/2-2,o.y+o.h*0.4,4,o.h*0.6+8);ctx.fillStyle='#FFD700';ctx.fillRect(o.x,o.y,o.w,o.h*0.45);ctx.fillStyle='#8B4513';ctx.font='6px Galmuri11,monospace';ctx.textAlign='center';ctx.fillText('공사중',o.x+o.w/2,o.y+o.h*0.32);ctx.textAlign='left';}
-      else if(o.type==='pole'){ctx.fillStyle='#D04040';ctx.fillRect(o.x,o.y,o.w,o.h);ctx.fillStyle='#FFF';ctx.fillRect(o.x,o.y+10,o.w,8);ctx.fillRect(o.x,o.y+26,o.w,8);}
     });
     // Manager
     ctx.drawImage(mgC,mgr.x-12,mgr.y-10);
@@ -815,7 +902,6 @@ function startLunchBreak(){
       ctx.fillRect(bx-tw/2,by-12,tw,18);ctx.strokeStyle='#EF5350';ctx.lineWidth=1.5;ctx.strokeRect(bx-tw/2,by-12,tw,18);
       ctx.fillStyle='#C02020';ctx.font='bold 9px Galmuri11,monospace';
       ctx.fillText(mgrBubble,bx,by+1);
-      // Bubble tail
       ctx.fillStyle='rgba(255,255,255,0.92)';ctx.beginPath();ctx.moveTo(bx-4,by+6);ctx.lineTo(bx+4,by+6);ctx.lineTo(bx,by+12);ctx.fill();
     }
     ctx.textAlign='left';
@@ -826,7 +912,7 @@ function startLunchBreak(){
     ctx.fillStyle=lunchTime<=5?'#EF5350':'#FFF';ctx.font='bold 12px Galmuri11,monospace';ctx.textAlign='center';ctx.fillText(`남은 시간: ${lunchTime}초`,W/2,26);ctx.textAlign='left';
     // Instructions
     ctx.fillStyle='rgba(0,0,0,0.35)';ctx.fillRect(W/2-80,H-45,160,22);
-    ctx.fillStyle='#FFF';ctx.font='9px Galmuri11,monospace';ctx.textAlign='center';ctx.fillText('방향키/WASD 또는 터치로 이동',W/2,H-30);ctx.textAlign='left';
+    ctx.fillStyle='#FFF';ctx.font='9px Galmuri11,monospace';ctx.textAlign='center';ctx.fillText(isTouch?'화면을 터치하여 이동':'방향키/WASD로 이동',W/2,H-30);ctx.textAlign='left';
     textEl.textContent=`점심시간! 편의점까지 달려가세요! (${lunchTime}초)`;
     requestAnimationFrame(loop);
   }
