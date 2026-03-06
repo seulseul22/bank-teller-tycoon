@@ -151,9 +151,9 @@
   </div>
   <div id="game-screen">
     <div id="hud">
-      <div class="hud-item"><span class="hud-label">날짜</span><span class="hud-value" id="hud-day">1일</span></div>
-      <div class="hud-item"><span class="hud-label">레벨</span><span class="hud-value" id="hud-level">1</span></div>
-      <div class="hud-item"><span class="hud-label">골드</span><span class="hud-value" id="hud-gold">0</span></div>
+      <div class="hud-item"><span class="hud-label">연차</span><span class="hud-value" id="hud-day">1년차</span></div>
+      <div class="hud-item"><span class="hud-label">직급</span><span class="hud-value" id="hud-level">5급 행원</span></div>
+      <div class="hud-item"><span class="hud-label">월급</span><span class="hud-value" id="hud-gold">0</span></div>
       <div class="hud-item"><span class="hud-label">경험치</span><span class="hud-value" id="hud-exp">0</span></div>
       <div id="time-bar-container"><div id="time-bar"></div><span id="time-label">09:00</span></div>
     </div>
@@ -193,7 +193,7 @@
         <div id="task-buttons"></div>
       </div>
       <div id="day-result"><h2 id="result-title"></h2><div id="result-content"></div><button class="pixel-btn" style="margin-top:24px" onclick="nextDay()">다음 날로</button></div>
-      <div id="level-up-overlay"><h2>레벨 업!</h2><p id="level-up-text"></p></div>
+      <div id="level-up-overlay"><h2>승진!</h2><p id="level-up-text"></p></div>
       <div id="day-intro">
         <canvas id="intro-canvas" width="480" height="650"></canvas>
         <div id="intro-text"></div>
@@ -354,6 +354,9 @@ function spawnTellerBubble(){
 
 // ===== GAME STATE =====
 const STATE={character:null,day:1,level:1,exp:0,expToNext:100,gold:0,timeLeft:100,customersServed:0,customersTotal:0,customersFailed:0,currentCustomer:null,queue:[],dayActive:false,taskPhase:'',comboCount:0,dailyGold:0,dailyExp:0,animFrame:0,lunchDone:false};
+const RANKS=['5급 행원','4급 행원','3급 행원','계장보','계장','대리','과장보','과장','차장','부지점장','지점장'];
+function getRank(){return RANKS[Math.min(STATE.level-1,RANKS.length-1)];}
+function getYear(){return Math.floor((STATE.day-1)/5)+1;}
 const TCP={deposit:['ajumma','ajussi','student','grandma','grandpa','child'],withdraw:['ajumma','ajussi','grandma','grandpa','student'],loan:['ajussi','rich','ajumma'],handle:['angry']};
 const DEPOSIT_AMTS=[10,20,30,50,70,100,150,200,300];
 const WITHDRAW_AMTS=[10,20,30,50,70,100];
@@ -431,7 +434,7 @@ function playDayIntro(){
   function drawNM(ctx,x,y,n){ctx.fillStyle='#E8E0D8';ctx.fillRect(x,y,60,80);ctx.strokeStyle='#C0B0A0';ctx.lineWidth=2;ctx.strokeRect(x,y,60,80);ctx.fillStyle='#1A3020';ctx.fillRect(x+8,y+8,44,28);ctx.fillStyle='#4AFF4A';ctx.font='bold 18px Galmuri11,monospace';ctx.textAlign='center';ctx.fillText(String(n).padStart(3,'0'),x+30,y+30);ctx.fillStyle='#8A6A4A';ctx.font='9px Galmuri11,monospace';ctx.fillText('대기번호',x+30,y+52);ctx.textAlign='left';ctx.fillStyle='#A09080';ctx.fillRect(x+15,y+58,30,4);if(n>0){ctx.fillStyle='#FFF';ctx.fillRect(x+18,y+62,24,14);ctx.fillStyle='#333';ctx.font='bold 8px Galmuri11,monospace';ctx.textAlign='center';ctx.fillText(String(n).padStart(3,'0'),x+30,y+73);ctx.textAlign='left';}}
   function animate(now){
     if(introSkipped)return;const el=now-startTime;ctx.clearRect(0,0,W,H);drawBG(ctx);
-    if(el<WE){const p=Math.min(1,el/WE);drawCasualTeller(casualCanvas.getContext('2d'),type,4,Math.floor(el/300));ctx.drawImage(casualCanvas,-80+p*(W/2-40),H*.65-110+Math.sin(el*.008)*3);drawDr(ctx,0);drawCl(ctx,W/2,120,30,8,30+p*25);textEl.textContent=dayNum+'일차 - 출근!';textEl.style.opacity='1';}
+    if(el<WE){const p=Math.min(1,el/WE);drawCasualTeller(casualCanvas.getContext('2d'),type,4,Math.floor(el/300));ctx.drawImage(casualCanvas,-80+p*(W/2-40),H*.65-110+Math.sin(el*.008)*3);drawDr(ctx,0);drawCl(ctx,W/2,120,30,8,30+p*25);textEl.textContent=getYear()+'년차 '+dayNum+'일째 - 출근!';textEl.style.opacity='1';}
     else if(el<TE){const tp=(el-WE)/(TE-WE),cx2=W/2-40,cy2=H*.65-110;drawDr(ctx,0);drawCl(ctx,W/2,120,30,8,55+tp*5);if(tp<.3){drawCasualTeller(casualCanvas.getContext('2d'),type,4,0);ctx.drawImage(casualCanvas,cx2,cy2);ctx.fillStyle=`rgba(255,255,255,${tp/.3*.6})`;ctx.fillRect(cx2-20,cy2-20,120,150);}else if(tp<.6){ctx.fillStyle=`rgba(255,255,255,${.6+.4*Math.sin((tp-.3)/.3*Math.PI)})`;ctx.fillRect(0,0,W,H);sparkles.forEach(sp=>{const sx=sp.x+Math.cos(sp.angle+tp*4)*30*(tp-.3)/.3,sy=sp.y-sp.speed*80*(tp-.3)/.3,sz=sp.size*(1+Math.sin(tp*20)*.3);ctx.fillStyle=sp.color;ctx.fillRect(sx-sz/2,sy-sz/2,sz,sz);if(sp.size>3){ctx.fillRect(sx-1,sy-sz,2,sz*2);ctx.fillRect(sx-sz,sy-1,sz*2,2);}});}else{drawChibiTeller(uniformCanvas.getContext('2d'),type,4,0);ctx.drawImage(uniformCanvas,cx2,cy2);const fd=1-(tp-.6)/.4;sparkles.forEach(sp=>{ctx.globalAlpha=fd*.8;ctx.fillStyle=sp.color;ctx.fillRect(sp.x+Math.cos(sp.angle+tp*4)*50-sp.size/2,sp.y-sp.speed*120-sp.size/2,sp.size,sp.size);});ctx.globalAlpha=1;const rR=60+20*Math.sin(tp*15);for(let i=0;i<8;i++){const a=i*Math.PI/4+tp*5;ctx.fillStyle=['#FFD700','#FF69B4','#87CEEB','#FFF'][i%4];ctx.fillRect(cx2+40+Math.cos(a)*rR-2,cy2+50+Math.sin(a)*rR*.6-2,4,4);}}textEl.textContent='변신!';textEl.style.opacity='1';}
     else if(el<CE){const cp=(el-TE)/(CE-TE),cx2=W/2-40,cy2=H*.65-110;drawDr(ctx,0);drawChibiTeller(uniformCanvas.getContext('2d'),type,4,Math.floor(el/300));ctx.drawImage(uniformCanvas,cx2,cy2);const cR=40*(1+.3*Math.sin(cp*Math.PI)),mn=55+cp*5;drawCl(ctx,W/2,130,cR,9,mn>=60?0:mn);if(cp>.7){const rf=(cp-.7)/.3;for(let r=0;r<3;r++){ctx.strokeStyle=`rgba(255,215,0,${(1-rf)*.5})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(W/2,130,cR+10+r*15+rf*20,0,Math.PI*2);ctx.stroke();}}textEl.textContent='오전 9:00 - 영업 시작!';textEl.style.opacity='1';}
     else if(el<RE){const rp=(el-CE)/(RE-CE),cx2=W/2-40,cy2=H*.65-110;drawDr(ctx,Math.min(1,rp*2));drawChibiTeller(uniformCanvas.getContext('2d'),type,4,Math.floor(el/300));ctx.drawImage(uniformCanvas,cx2,cy2);const nv=Math.min(custCanvases.length,Math.floor(rp*custCanvases.length*1.5));for(let i=0;i<nv;i++){const cp2=Math.min(1,(rp-i/(custCanvases.length*1.5))*2);if(cp2<=0)continue;ctx.drawImage(custCanvases[i],W-60+(30+i*50-(W-60))*Math.min(1,cp2),H*.65-70+Math.sin((el+i*200)*.01)*2);}textEl.textContent='손님들이 들어옵니다!';textEl.style.opacity='1';}
@@ -694,12 +697,12 @@ function completeTask(){
   const task=STATE.currentCustomer.task;let g=task.reward.gold,e=task.reward.exp;
   if(STATE.comboCount>=3){g=Math.floor(g*1.5);e=Math.floor(e*1.5);floatText('콤보 x'+STATE.comboCount+'!','#FFD700',240,280);}
   g+=STATE.level*5;STATE.gold+=g;STATE.exp+=e;STATE.dailyGold+=g;STATE.dailyExp+=e;STATE.customersServed++;
-  floatText('+'+g+'G','#FFD700',300,310);floatText('+'+e+'EXP','#7BD47B',160,310);
+  floatText('+'+g+'만원','#FFD700',300,310);floatText('+'+e+'EXP','#7BD47B',160,310);
   if(STATE.exp>=STATE.expToNext)levelUp();updateHUD();
   document.getElementById('task-panel').style.display='none';showIdle();
   setTimeout(()=>serveNext(),600);
 }
-function levelUp(){STATE.level++;STATE.exp-=STATE.expToNext;STATE.expToNext=Math.floor(STATE.expToNext*1.4);document.getElementById('level-up-text').textContent='레벨 '+STATE.level+'! 업무 처리 속도가 올라갑니다!';document.getElementById('level-up-overlay').style.display='flex';setTimeout(()=>{document.getElementById('level-up-overlay').style.display='none';},1500);}
+function levelUp(){STATE.level++;STATE.exp-=STATE.expToNext;STATE.expToNext=Math.floor(STATE.expToNext*1.4);document.getElementById('level-up-text').textContent='승진! '+getRank()+'(으)로 진급했습니다!';document.getElementById('level-up-overlay').style.display='flex';setTimeout(()=>{document.getElementById('level-up-overlay').style.display='none';},1500);}
 
 // ===== LUNCH BREAK DODGE GAME =====
 function startLunchBreak(){
@@ -801,7 +804,7 @@ function startLunchBreak(){
   function endL(success){
     done=true;clearInterval(ti);
     document.removeEventListener('keydown',kd);document.removeEventListener('keyup',ku);
-    textEl.textContent=success?'편의점 도시락 획득! +80G':'시간 초과... 컵라면이라도... +20G';
+    textEl.textContent=success?'편의점 도시락 획득! +80만원':'시간 초과... 컵라면이라도... +20만원';
     const bonus=success?80:20;STATE.gold+=bonus;STATE.dailyGold+=bonus;updateHUD();
     setTimeout(()=>{
       overlay.style.display='none';dpad.style.display='none';joystick.style.display='none';
@@ -924,15 +927,15 @@ function endDay(ok){
   STATE.dayActive=false;clearInterval(timeInterval);clearInterval(animInterval);stopBubbles();
   document.getElementById('task-panel').style.display='none';showIdle();
   const r=document.getElementById('day-result'),t=document.getElementById('result-title'),c=document.getElementById('result-content');r.style.display='flex';
-  if(ok){t.textContent=STATE.day+'일차 업무 완료!';t.style.color='#FFD700';const tb=Math.floor(STATE.timeLeft*2),pb=STATE.customersFailed===0?100:0;STATE.gold+=tb+pb;
-    c.innerHTML=`<div class="result-line">응대 고객: ${STATE.customersServed}명</div><div class="result-line">획득 골드: ${STATE.dailyGold}G</div><div class="result-line">획득 경험치: ${STATE.dailyExp}</div><div class="result-line bonus">시간 보너스: +${tb}G</div>${pb?'<div class="result-line bonus">퍼펙트 서비스 보너스: +100G!</div>':''}<div class="result-line" style="margin-top:14px;color:#FFD700;font-size:18px">총 골드: ${STATE.gold}G</div>`;}
+  if(ok){t.textContent=getYear()+'년차 '+STATE.day+'일째 업무 완료!';t.style.color='#FFD700';const tb=Math.floor(STATE.timeLeft*2),pb=STATE.customersFailed===0?100:0;STATE.gold+=tb+pb;
+    c.innerHTML=`<div class="result-line">직급: ${getRank()}</div><div class="result-line">응대 고객: ${STATE.customersServed}명</div><div class="result-line">오늘 월급: ${STATE.dailyGold}만원</div><div class="result-line">획득 경험치: ${STATE.dailyExp}</div><div class="result-line bonus">시간 보너스: +${tb}만원</div>${pb?'<div class="result-line bonus">퍼펙트 서비스 보너스: +100만원!</div>':''}<div class="result-line" style="margin-top:14px;color:#FFD700;font-size:18px">총 월급: ${STATE.gold}만원</div>`;}
   else{t.textContent='시간 초과...';t.style.color='#EF5350';const rm=STATE.queue.length+(STATE.currentCustomer?1:0),pn=rm*20;STATE.gold=Math.max(0,STATE.gold-pn);
-    c.innerHTML=`<div class="result-line">응대 고객: ${STATE.customersServed}명</div><div class="result-line penalty">미처리 고객: ${rm}명</div><div class="result-line">획득 골드: ${STATE.dailyGold}G</div><div class="result-line penalty">야근 페널티: -${pn}G</div><div class="result-line" style="margin-top:14px;color:#FFD700;font-size:18px">총 골드: ${STATE.gold}G</div>`;}
+    c.innerHTML=`<div class="result-line">직급: ${getRank()}</div><div class="result-line">응대 고객: ${STATE.customersServed}명</div><div class="result-line penalty">미처리 고객: ${rm}명</div><div class="result-line">오늘 월급: ${STATE.dailyGold}만원</div><div class="result-line penalty">야근 페널티: -${pn}만원</div><div class="result-line" style="margin-top:14px;color:#FFD700;font-size:18px">총 월급: ${STATE.gold}만원</div>`;}
 }
 function nextDay(){STATE.day++;document.getElementById('day-result').style.display='none';updateHUD();playDayIntro();}
 
 // ===== UI =====
-function updateHUD(){document.getElementById('hud-day').textContent=STATE.day+'일';document.getElementById('hud-level').textContent=STATE.level;document.getElementById('hud-gold').textContent=STATE.gold;document.getElementById('hud-exp').textContent=STATE.exp+'/'+STATE.expToNext;}
+function updateHUD(){document.getElementById('hud-day').textContent=getYear()+'년차';document.getElementById('hud-level').textContent=getRank();document.getElementById('hud-gold').textContent=STATE.gold+'만';document.getElementById('hud-exp').textContent=STATE.exp+'/'+STATE.expToNext;}
 function updateTimeBar(){
   const bar=document.getElementById('time-bar'),lbl=document.getElementById('time-label');bar.style.width=STATE.timeLeft+'%';
   const h=9+Math.floor((100-STATE.timeLeft)*9/100),m=Math.floor(((100-STATE.timeLeft)*9/100-Math.floor((100-STATE.timeLeft)*9/100))*60);
